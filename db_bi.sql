@@ -113,3 +113,79 @@ GROUP BY
     t.thing_id;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+date v
+
+SELECT
+    d.full_date AS date, 
+    SUM(f.nbr_alert) AS nombre  
+FROM
+    `dw_alert_fact` f
+JOIN
+    `dw_date_dim` d ON f.date_id = d.date_id  
+GROUP BY
+    d.full_date;  
+
+
+
+full date v 
+
+SELECT
+    d.full_date AS date, 
+    SUM(f.nbr_alert) AS nombre  
+FROM
+    `dw_alert_fact` f
+JOIN
+    `dw_date_dim` d ON f.date_id = d.date_id  
+    
+    WHERE d.full_date BETWEEN '2024-09-01' AND '2024-09-30' 
+GROUP BY
+    d.full_date;
+
+
+
+par mois
+
+
+    SELECT
+    d.month_name AS mois,  
+    SUM(f.nbr_alert) AS nombre
+FROM
+    `dw_alert_fact` f
+JOIN
+    `dw_date_dim` d ON f.date_id = d.date_id 
+GROUP BY
+    d.month_name;
+
+
+
+    year
+
+    SELECT
+    d.year AS annes,  
+    SUM(f.nbr_alert) AS nombre
+FROM
+    `dw_alert_fact` f
+JOIN
+    `dw_date_dim` d ON f.date_id = d.date_id 
+GROUP BY
+    d.year;
+
+
+
+
+
+
+
+    
