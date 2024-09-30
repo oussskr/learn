@@ -56,3 +56,41 @@ JOIN
 
 GROUP BY
     a.`type designation`;
+
+
+
+
+
+
+
+
+     SELECT
+    n.`lname` AS chauffeur,
+    SUM(f.nbr_alert) AS nombre
+FROM
+    `dw_alert_fact` f
+
+JOIN
+    `alert_type` a ON f.alert_type_id = a.alert_type_id
+
+
+GROUP BY
+    n.`lname`;
+
+
+corrected v
+
+
+
+
+    SELECT
+    CONCAT(u.fname, ' ', u.lname) AS chauffeur,
+    SUM(f.nbr_alert) AS nombre
+FROM
+    `dw_alert_fact` f
+JOIN
+    `alert_type` a ON f.alert_type_id = a.alert_type_id
+JOIN
+    `user` u ON f.user_id = u.user_id
+GROUP BY
+    u.fname, u.lname;
