@@ -78,7 +78,7 @@ GROUP BY
     n.`lname`;
 
 
-corrected v
+corrected v:
 
 
 
@@ -94,3 +94,22 @@ JOIN
     `user` u ON f.user_id = u.user_id
 GROUP BY
     u.fname, u.lname;
+
+
+
+
+
+v5 vehicule
+
+SELECT
+t.thing_type AS vehicule,
+    t.thing_id AS matricule,  
+    SUM(f.nbr_alert) AS nombre
+FROM
+    `dw_alert_fact` f
+JOIN
+    `dw_thing_dim` t ON f.thing_id = t.thing_id 
+GROUP BY
+    t.thing_id;
+
+
