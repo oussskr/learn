@@ -695,3 +695,168 @@ ORDER BY
     ---------------------part 3------------------------
 
 
+
+
+
+
+    
+    SELECT
+    t.thing_type AS vehicule,             -- Vehicle type
+    t.thing_id AS matricule,              -- Vehicle ID (matricule)
+    SUM(f.nbr_mission) AS missions,       -- Total number of missions
+    NULL AS CA,                           -- Placeholder for CA (to be defined later)
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,  -- Total kilometers traveled
+    NULL AS ca_per_km                     -- Placeholder for CA/km (to be defined later)
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_thing_dim` t ON f.thing_id = t.thing_id
+GROUP BY
+    t.thing_type, t.thing_id  -- Group by vehicle and matricule
+ORDER BY
+    t.thing_type, t.thing_id;  -- Order by vehicle type and matricule
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SELECT
+    CONCAT(u.contact_prenom, ' ', u.contact_nom) AS chauffeur, -- Chauffeur's full name
+    SUM(f.nbr_mission) AS missions,                           -- Total number of missions
+    NULL AS CA,                                               -- Placeholder for CA (to be defined later)
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,          -- Total kilometers traveled
+    ROUND(SUM(f.total_cost), 3) AS frais_de_mission,          -- Total mission costs (frais de mission)
+    NULL AS ca_per_km                                         -- Placeholder for CA/km (to be defined later)
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_user_dim` u ON f.user_id = u.user_id
+GROUP BY
+    u.contact_prenom, u.contact_nom  -- Group by chauffeur's first and last name
+ORDER BY
+    u.contact_prenom, u.contact_nom;  -- Order by chauffeur name
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SELECT
+    t.thing_group AS destination,                            -- Destination (from thing_group)
+    SUM(f.nbr_mission) AS missions,                          -- Total number of missions
+    NULL AS CA,                                              -- Placeholder for CA (to be defined later)
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,         -- Total kilometers traveled
+    NULL AS ca_per_km                                        -- Placeholder for CA/km (to be defined later)
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_thing_dim` t ON f.thing_id = t.thing_id
+GROUP BY
+    t.thing_group                                           -- Group by destination
+ORDER BY
+    t.thing_group;                                          -- Order by destination
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SELECT
+    d.full_date AS jours,                                    -- Day (full date)
+    SUM(f.nbr_mission) AS missions,                          -- Total number of missions
+    NULL AS CA,                                              -- Placeholder for CA
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,         -- Total kilometers traveled
+    ROUND(SUM(f.total_cost), 3) AS frais_de_mission,         -- Total mission costs
+    NULL AS ca_per_km                                        -- Placeholder for CA/km
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_date_dim` d ON f.date_id = d.date_id
+GROUP BY
+    d.full_date                                              -- Group by each day
+ORDER BY
+    d.full_date;                                             -- Order by date
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SELECT
+    d.month_name AS mois,                                    -- Month name
+    SUM(f.nbr_mission) AS missions,                          -- Total number of missions
+    NULL AS CA,                                              -- Placeholder for CA
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,         -- Total kilometers traveled
+    ROUND(SUM(f.total_cost), 3) AS frais_de_mission,         -- Total mission costs
+    NULL AS ca_per_km                                        -- Placeholder for CA/km
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_date_dim` d ON f.date_id = d.date_id
+GROUP BY
+    d.month_name                                             -- Group by month
+ORDER BY
+    d.month_name;                                            -- Order by month
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SELECT
+    d.year AS annes,                                         -- Year
+    SUM(f.nbr_mission) AS missions,                          -- Total number of missions
+    NULL AS CA,                                              -- Placeholder for CA
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,         -- Total kilometers traveled
+    ROUND(SUM(f.total_cost), 3) AS frais_de_mission,         -- Total mission costs
+    NULL AS ca_per_km                                        -- Placeholder for CA/km
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_date_dim` d ON f.date_id = d.date_id
+GROUP BY
+    d.year                                                   -- Group by year
+ORDER BY
+    d.year;                                                  -- Order by year
+	
+
+
+
+
+
+
+
+
+
+
+
+    
