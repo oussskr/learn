@@ -204,7 +204,7 @@ GROUP BY
 
 
 
-
+-----------------
 
 
 
@@ -215,8 +215,7 @@ GROUP BY
 
 
 
-
-    WITH anomaly_data AS (
+WITH anomaly_data AS (
     SELECT
         f.date_id,
         f.nbr_anomaly_speed,
@@ -252,9 +251,7 @@ SELECT
 FROM
     anomaly_data
 GROUP BY
-    anomalie_type;
-    
-    
+    anomalie_type;    
     
     
     
@@ -320,6 +317,381 @@ GROUP BY
     
     
     
+
+
+
+
+
+
+
+
+
+    
+    --------python script
+    import mysql.connector
+import random
+from faker import Faker
+from datetime import datetime, timedelta
+
+# Initialize Faker for generating fake data
+fake = Faker()
+
+# Database connection configuration
+config = {
+    'user': 'root',
+    'password': '',
+    'host': 'localhost',
+    'database': 'db_bi3',
+}
+
+
+# config = {
+#     'user': 'postgres',
+#     'password': 'ryqn',
+#     'host': 'localhost',
+#     'database': 'geoDWprod',
+# }
+
+
+# Establish database connection
+conn = mysql.connector.connect(**config)
+# conn = psycopg2.connect(**config)
+cursor = conn.cursor()
+
+# Generate and insert random data for DW_date_dim
+def populate_date_dim(cursor, num_days=700):
+    start_date = datetime.today() - timedelta(days=num_days)
+    for i in range(num_days):
+        date = start_date + timedelta(days=i)
+        year = date.year
+        month = date.strftime('%Y-%m')
+        day = date.day
+        month_name = date.strftime('%B')
+        day_name = date.strftime('%A')
+        quarter = f"{year}-Q{(date.month-1)//3 + 1}"
+        season = ("Winter" if date.month in [12, 1, 2] else
+                  "Spring" if date.month in [3, 4, 5] else
+                  "Summer" if date.month in [6, 7, 8] else
+                  "Fall")
+        
+        cursor.execute("""
+            INSERT INTO DW_date_dim (full_date, year, month, day, month_name, day_name, quarter, season)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (date, year, month, day, month_name, day_name, quarter, season))
+
+# Generate and insert random data for DW_thing_dim
+def populate_thing_dim(cursor, num_things=4000):
+    for i in range(num_things):
+        thing_type = random.choice(['Vehicle', 'Drone', 'Robot'])
+        thing_group = random.choice(['Group A', 'Group B', 'Group C'])
+        
+        cursor.execute("""
+            INSERT INTO DW_thing_dim (thing_type, thing_group)
+            VALUES (%s, %s)
+        """, (thing_type, thing_group))
+
+# Generate and insert random data for DW_user_dim
+def populate_user_dim(cursor, num_users=1000):
+    for i in range(num_users):
+        user_id = i + 1
+        contact_prenom = fake.first_name()
+        contact_nom = fake.last_name()
+        telephone = fake.phone_number()
+        
+        cursor.execute("""
+            INSERT INTO DW_user_dim (user_id, contact_prenom, contact_nom, telephone)
+            VALUES (%s, %s, %s, %s)
+        """, (user_id, contact_prenom, contact_nom, telephone))
+
+# Generate and insert random data for DW_fleetop_fact
+def populate_fleetop_fact(cursor, num_records=2800000):
+    # Fetch the necessary IDs
+    cursor.execute("SELECT thing_id FROM DW_thing_dim")
+    thing_ids = [row[0] for row in cursor.fetchall()]
+    
+    cursor.execute("SELECT date_id FROM DW_date_dim")
+    date_ids = [row[0] for row in cursor.fetchall()]
+    
+    cursor.execute("SELECT user_id FROM DW_user_dim")
+    user_ids = [row[0] for row in cursor.fetchall()]
+
+    # Ensure the number of records doesn't exceed the possible combinations
+    max_combinations = min(len(thing_ids) * len(date_ids), num_records)
+    
+    count = 0
+    for thing_id in thing_ids:
+        for date_id in date_ids:
+            if count >= max_combinations:
+                break  # Stop when reaching the limit of combinations
+
+            user_id = random.choice(user_ids)
+            max_speed = random.uniform(50, 120)
+            avg_speed = random.uniform(30, 70)
+            fuel_consumption = random.uniform(5, 20)
+            nbr_mission = random.randint(1, 10)
+            car_parts_cost = random.uniform(50, 300)
+            fuel_costs = random.uniform(50, 200)
+            nbr_actions = random.randint(1, 5)
+            idle_time = random.uniform(1, 8)
+            active_time = random.uniform(8, 24)
+            travelled_distance = random.uniform(100, 500)
+            nbr_anomaly_longrun = random.randint(0, 5)
+            nbr_anomaly_longstop = random.randint(0, 5)
+            nbr_anomaly_speed = random.randint(0, 5)
+            nbr_anomaly_zone = random.randint(0, 5)
+
+            cursor.execute("""
+                INSERT INTO DW_fleetop_fact (
+                    thing_id, date_id, user_id, max_speed, avg_speed, fuel_consumption,
+                    nbr_mission, car_parts_cost, fuel_costs, nbr_actions, idle_time, active_time,
+                    travelled_distance, nbr_anomaly_longrun, nbr_anomaly_longstop, nbr_anomaly_speed,
+                    nbr_anomaly_zone
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                thing_id, date_id, user_id, max_speed, avg_speed, fuel_consumption,
+                nbr_mission, car_parts_cost, fuel_costs, nbr_actions, idle_time, active_time,
+                travelled_distance, nbr_anomaly_longrun, nbr_anomaly_longstop, nbr_anomaly_speed,
+                nbr_anomaly_zone
+            ))
+
+            count += 1
+        if count >= max_combinations:
+            break
+
+
+# Populate tables
+populate_date_dim(cursor)
+print("Date dimension populated")
+populate_thing_dim(cursor)
+print("Thing dimension populated")
+populate_user_dim(cursor)
+print("User dimension populated")
+populate_fleetop_fact(cursor)
+print("Fleet operation fact populated")
+
+# Commit changes and close connection
+conn.commit()
+cursor.close()
+conn.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------part 2-----------------------------
+
+
+
+
+    SELECT
+    t.thing_type AS vehicule,
+    t.thing_id AS matricule,
+    ROUND(SUM(f.fuel_consumption), 3) AS total_litres,
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,
+    ROUND(SUM(f.total_cost), 3) AS couts_DA,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND(SUM(f.total_cost) / SUM(f.travelled_distance), 3)
+        ELSE 0
+    END AS couts_per_km_DA,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND((SUM(f.fuel_consumption) / SUM(f.travelled_distance)) * 100, 3)
+        ELSE 0
+    END AS litres_per_100_km
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_thing_dim` t ON f.thing_id = t.thing_id
+GROUP BY
+    t.thing_id, t.thing_type;
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SELECT
+    CONCAT(u.contact_prenom, ' ', u.contact_nom) AS chauffeur,
+    ROUND(SUM(f.fuel_consumption), 3) AS total_litres,
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND(SUM(f.total_cost) / SUM(f.travelled_distance), 3)
+        ELSE 0
+    END AS couts_per_km_DA,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND((SUM(f.fuel_consumption) / SUM(f.travelled_distance)) * 100, 3)
+        ELSE 0
+    END AS litres_per_100_km
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_user_dim` u ON f.user_id = u.user_id
+GROUP BY
+    u.user_id, u.contact_prenom, u.contact_nom;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT
+    d.full_date AS jours,
+    ROUND(SUM(f.fuel_consumption), 3) AS total_litres,
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND(SUM(f.total_cost) / SUM(f.travelled_distance), 3)
+        ELSE 0
+    END AS couts_per_km_DA,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND((SUM(f.fuel_consumption) / SUM(f.travelled_distance)) * 100, 3)
+        ELSE 0
+    END AS litres_per_100_km
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_date_dim` d ON f.date_id = d.date_id
+GROUP BY
+    d.full_date
+ORDER BY
+    d.full_date;
+    
+    
+    
+    
+    
+    
+    
+    
+    SELECT
+    d.month AS mois,
+    ROUND(SUM(f.fuel_consumption), 3) AS total_litres,
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND(SUM(f.total_cost) / SUM(f.travelled_distance), 3)
+        ELSE 0
+    END AS couts_per_km_DA,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND((SUM(f.fuel_consumption) / SUM(f.travelled_distance)) * 100, 3)
+        ELSE 0
+    END AS litres_per_100_km
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_date_dim` d ON f.date_id = d.date_id
+WHERE
+    d.year = 2024 -- You can adjust the year if needed
+GROUP BY
+    d.month
+ORDER BY
+    d.month;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    SELECT
+    d.year AS annee,
+    ROUND(SUM(f.fuel_consumption), 3) AS total_litres,
+    ROUND(SUM(f.travelled_distance), 3) AS total_km,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND(SUM(f.total_cost) / SUM(f.travelled_distance), 3)
+        ELSE 0
+    END AS couts_per_km_DA,
+    CASE 
+        WHEN SUM(f.travelled_distance) > 0 THEN ROUND((SUM(f.fuel_consumption) / SUM(f.travelled_distance)) * 100, 3)
+        ELSE 0
+    END AS litres_per_100_km
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_date_dim` d ON f.date_id = d.date_id
+GROUP BY
+    d.year
+ORDER BY
+    d.year;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+ SELECT
+    d.full_date AS date,
+    t.thing_type AS vehicule,
+    t.thing_id AS matricule,
+    NULL AS niveau_avant,  -- Commented out for now
+    NULL AS niveau_apres,  -- Commented out for now
+    ROUND(f.fuel_consumption, 3) AS total_litres,
+    ROUND(f.fuel_consumption * 45.97, 3) AS total_da,  -- Total cost using Naftal price
+    ROUND(f.fuel_consumption, 3) AS total_litres_naftal,
+    ROUND(f.fuel_consumption * 45.97, 3) AS total_da_naftal  -- Total cost using Naftal price
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_date_dim` d ON f.date_id = d.date_id
+JOIN
+    `DW_thing_dim` t ON f.thing_id = t.thing_id
+WHERE
+    f.fuel_consumption > 0
+ORDER BY
+    d.full_date;
+
+
+
+
+
+
+
+
+
+
+
+    ---------------------part 3------------------------
+
+
