@@ -860,4 +860,95 @@ ORDER BY
 
 
 
-    
+
+-----------------part4
+
+
+
+
+    SELECT 
+    'Carburant' AS type,
+    ROUND(SUM(f.fuel_costs), 3) AS montant
+FROM 
+    `DW_fleetop_fact` f
+WHERE 
+    f.fuel_costs > 0
+
+UNION ALL
+
+SELECT 
+    'Assurance' AS type,
+    ROUND(SUM(f.assurence), 3) AS montant
+FROM 
+    `DW_fleetop_fact` f
+WHERE 
+    f.assurence > 0
+
+UNION ALL
+
+SELECT 
+    'Contrôle Technique' AS type,
+    ROUND(SUM(f.controle_technique), 3) AS montant
+FROM 
+    `DW_fleetop_fact` f
+WHERE 
+    f.controle_technique > 0
+
+UNION ALL
+
+SELECT 
+    'Vignettes' AS type,
+    ROUND(SUM(f.vignettes), 3) AS montant
+FROM 
+    `DW_fleetop_fact` f
+WHERE 
+    f.vignettes > 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT
+    t.thing_type AS vehicle,
+    t.thing_id AS matricule,
+        ROUND(SUM(f.fuel_costs), 3) AS carburant,
+    ROUND(SUM(f.car_parts_cost ), 3)AS maintenance,
+    ROUND(SUM(f.assurence), 3) AS assurence,
+    ROUND(SUM(f.controle_technique), 3) AS controle_technique,
+    ROUND(SUM(f.vignettes), 3) AS vignettes,
+    ROUND(SUM(f.fuel_costs + f.assurence + f.controle_technique + f.vignettes), 3) AS total -- Sum of all the costs
+FROM
+    `DW_fleetop_fact` f
+JOIN
+    `DW_thing_dim` t ON f.thing_id = t.thing_id
+GROUP BY
+    t.thing_type, t.thing_id
+ORDER BY
+    t.thing_type, t.thing_id;
+
+
+
+
+
+
+
