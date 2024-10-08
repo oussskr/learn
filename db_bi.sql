@@ -791,7 +791,6 @@ ORDER BY
 
 
 
-
 SELECT
     d.month_name AS date,
     ROUND(SUM(f.fuel_consumption), 3) AS total_litres,
@@ -811,12 +810,6 @@ GROUP BY
     d.month_name
 ORDER BY
     FIELD(d.month_name, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
-GROUP BY
-    d.month_name
-ORDER BY
-    FIELD(d.month_name, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
-
-
 
 
 
