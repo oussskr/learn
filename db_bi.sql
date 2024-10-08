@@ -155,7 +155,7 @@ conn.close()
 
 
 
-
+--------------
 
 
 
@@ -444,19 +444,12 @@ ORDER BY
     
     
     
-    
-    
-    
- SELECT
-    d.full_date AS date,
-    t.thing_type AS vehicule,
-    t.thing_id AS matricule,
-    NULL AS niveau_avant,  -- Commented out for now
-    NULL AS niveau_apres,  -- Commented out for now
-    ROUND(f.fuel_consumption, 3) AS total_litres,
-    ROUND(f.fuel_consumption * 45.97, 3) AS total_da,  -- Total cost using Naftal price
-    ROUND(f.fuel_consumption, 3) AS total_litres_naftal,
-    ROUND(f.fuel_consumption * 45.97, 3) AS total_da_naftal  -- Total cost using Naftal price
+    SELECT
+    d.month_name AS date,
+    ROUND(SUM(f.fuel_consumption), 3) AS total_litres,
+    ROUND(SUM(f.fuel_consumption * 45.97), 3) AS total_da,  -- Total cost using Naftal price
+    ROUND(SUM(f.fuel_consumption), 3) AS total_litres_naftal,
+    ROUND(SUM(f.fuel_consumption * 45.97), 3) AS total_da_naftal  -- Total cost using Naftal price
 FROM
     `DW_fleetop_fact` f
 JOIN
@@ -465,9 +458,11 @@ JOIN
     `DW_thing_dim` t ON f.thing_id = t.thing_id
 WHERE
     f.fuel_consumption > 0
+    AND d.year = 2024  -- Replace 2024 with the specific year you want
+GROUP BY
+    d.month_name
 ORDER BY
-    d.full_date;
-
+    FIELD(d.month_name, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
 
 
 
@@ -763,6 +758,7 @@ ORDER BY
 SELECT
     d.full_date AS date,
     ROUND(SUM(f.fuel_costs), 3) AS carburant,
+    ROUND(SUM(f.car_parts_cost ), 3)AS maintenance,
     ROUND(SUM(f.assurence), 3) AS assurence,
     ROUND(SUM(f.controle_technique), 3) AS controle_technique,
     ROUND(SUM(f.vignettes), 3) AS vignettes,
@@ -796,22 +792,25 @@ ORDER BY
 
 
 
-
-
-    SELECT
-    d.month_name AS month,
-    ROUND(SUM(f.fuel_costs), 3) AS carburant,
-    ROUND(SUM(f.assurence), 3) AS assurence,
-    ROUND(SUM(f.controle_technique), 3) AS controle_technique,
-    ROUND(SUM(f.vignettes), 3) AS vignettes,
-    ROUND(SUM(f.fuel_costs + f.assurence + f.controle_technique + f.vignettes), 3) AS total 
+SELECT
+    d.month_name AS date,
+    ROUND(SUM(f.fuel_consumption), 3) AS total_litres,
+    ROUND(SUM(f.fuel_consumption * 45.97), 3) AS total_da,  -- Total cost using Naftal price
+    ROUND(SUM(f.fuel_consumption), 3) AS total_litres_naftal,
+    ROUND(SUM(f.fuel_consumption * 45.97), 3) AS total_da_naftal  -- Total cost using Naftal price
 FROM
     `DW_fleetop_fact` f
 JOIN
     `DW_date_dim` d ON f.date_id = d.date_id
+JOIN
+    `DW_thing_dim` t ON f.thing_id = t.thing_id
 WHERE
-    (f.fuel_costs > 0 OR f.assurence > 0 OR f.controle_technique > 0 OR f.vignettes > 0)
+    f.fuel_consumption > 0
     AND d.year = 2024  -- Replace 2024 with the specific year you want
+GROUP BY
+    d.month_name
+ORDER BY
+    FIELD(d.month_name, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
 GROUP BY
     d.month_name
 ORDER BY
@@ -833,6 +832,7 @@ ORDER BY
     SELECT
     d.year AS year,
     ROUND(SUM(f.fuel_costs), 3) AS carburant,
+    ROUND(SUM(f.car_parts_cost ), 3)AS maintenance,
     ROUND(SUM(f.assurence), 3) AS assurence,
     ROUND(SUM(f.controle_technique), 3) AS controle_technique,
     ROUND(SUM(f.vignettes), 3) AS vignettes,
